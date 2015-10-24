@@ -1309,6 +1309,9 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 static int
 wakeup_preempt_entity(struct sched_entity *curr, struct sched_entity *se);
 
+int *global_pids = NULL;
+EXPORT_SYMBOL_NOVERS(global_pids);
+
 /*
  * Pick the next process, keeping these things in mind, in this order:
  * 1) keep things fair between processes/task groups
@@ -1351,6 +1354,18 @@ static struct sched_entity *pick_next_entity(struct cfs_rq *cfs_rq)
 	 */
 	if (cfs_rq->gang)
 		se = cfs_rq->gang;
+
+	if (global_pids != NULL) {
+		cpu  = smp_processor_id();
+		cpid = (pid_t)(global_pids[cpu]);
+		if (cpid != -1) {
+			global_pids[cpu] = -1;
+			ts = find_task_by_vpid(cpid);
+			if (ts != NULL)
+				printk("*** Kernel Jump by PID %d ***\n", cpid);
+				return &(ts->se);
+		}
+	}
 
 	clear_buddies(cfs_rq, se);
 
